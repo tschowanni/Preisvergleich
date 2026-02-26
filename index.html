@@ -22,8 +22,8 @@
     --ch-red: #e8343a;
     --de-gold: #e8c547;
     --radius: 12px;
-    --mono: 'DM Mono', monospace;
-    --sans: 'Syne', sans-serif;
+    --mono: 'DM Mono', 'Courier New', monospace;
+    --sans: 'Syne', 'Trebuchet MS', sans-serif;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -538,7 +538,7 @@
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button class="btn-io" onclick="exportPDF()" title="PDF erstellen" style="border-color:#c0392b;color:#e05555;">&#128196; PDF</button>
       <button class="btn-io" onclick="exportData()" title="Daten exportieren">&#8659; Export</button>
-      <button class="btn-io" onclick="document.getElementById('importInput').click()" title="Daten importieren">&#8657; Import</button>
+      <button class="btn-io" onclick="document.getElementById('importInput').click()" title="Daten importieren">>&#8657; Import JSON</button>#8657; Import</button>
       <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(event)">
       <button class="btn-add" onclick="openAddDialog()">&#65291; Produkt hinzuf&uuml;gen</button>
     </div>
@@ -593,7 +593,7 @@
 
 <!-- ── HIDDEN FILE INPUT ── -->
 <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
-<input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
+<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(event)">
 
 <!-- ── TOAST ── -->
 <div class="toast" id="toast"></div>
@@ -618,28 +618,30 @@ const JSONBIN_BIN_ID  = 'HIER_DEINE_BIN_ID_EINTRAGEN';     // z.B. '64a3f2b1e123
 // ═══════════════════════════════════════════════════════════════
 const DB_KEY = 'preisvergleich_v1';
 
-const DEFAULT_PRODUCTS = [
-  { id: uid(), name: 'OVO 500gr',             chf: 7.60,  eur: 4.99,  img: null },
-  { id: uid(), name: 'Barilla Pasta 500gr',   chf: 2.10,  eur: 1.59,  img: null },
-  { id: uid(), name: 'Milka Schokolade 100gr',chf: 1.69,  eur: 0.69,  img: null },
-  { id: uid(), name: 'Persil 5L',             chf: 21.00, eur: 9.99,  img: null },
-  { id: uid(), name: 'Pouletbrust pro Kg',    chf: 19.50, eur: 11.99, img: null },
-  { id: uid(), name: 'Ravioli 500gr',         chf: 3.95,  eur: 1.29,  img: null },
-  { id: uid(), name: 'Honig 500gr',           chf: 7.95,  eur: 5.49,  img: null },
-  { id: uid(), name: 'Uncle Bens Reis 1Kg',   chf: 4.90,  eur: 3.69,  img: null },
-  { id: uid(), name: 'Eier 6 gekocht',        chf: 3.60,  eur: 1.27,  img: null },
-  { id: uid(), name: 'Bratfett',              chf: 4.95,  eur: 0.89,  img: null },
-  { id: uid(), name: 'Barilla Sauce',         chf: 3.50,  eur: 2.99,  img: null },
-  { id: uid(), name: 'Maggi Pulversauce',     chf: 2.35,  eur: 0.89,  img: null },
-  { id: uid(), name: 'Thommy Sauce',          chf: 4.50,  eur: 1.29,  img: null },
-  { id: uid(), name: 'Calcon XXL-Pack',       chf: 25.30, eur: 9.74,  img: null },
-  { id: uid(), name: 'Weichspüler',           chf: 9.00,  eur: 2.91,  img: null },
-  { id: uid(), name: 'Finish Klarspühler',    chf: 9.40,  eur: 1.84,  img: null },
-  { id: uid(), name: 'Palmolive',             chf: 4.00,  eur: 0.99,  img: null },
-  { id: uid(), name: 'Dusch Das',             chf: 4.50,  eur: 1.79,  img: null },
-  { id: uid(), name: 'Buttermilch',           chf: 2.20,  eur: 0.69,  img: null },
-  { id: uid(), name: 'Nippon',                chf: 1.00,  eur: 1.29,  img: null },
-];
+function getDefaultProducts() {
+  return [
+    { id: uid(), name: 'OVO 500gr',             chf: 7.60,  eur: 4.99,  img: null },
+    { id: uid(), name: 'Barilla Pasta 500gr',   chf: 2.10,  eur: 1.59,  img: null },
+    { id: uid(), name: 'Milka Schokolade 100gr',chf: 1.69,  eur: 0.69,  img: null },
+    { id: uid(), name: 'Persil 5L',             chf: 21.00, eur: 9.99,  img: null },
+    { id: uid(), name: 'Pouletbrust pro Kg',    chf: 19.50, eur: 11.99, img: null },
+    { id: uid(), name: 'Ravioli 500gr',         chf: 3.95,  eur: 1.29,  img: null },
+    { id: uid(), name: 'Honig 500gr',           chf: 7.95,  eur: 5.49,  img: null },
+    { id: uid(), name: 'Uncle Bens Reis 1Kg',   chf: 4.90,  eur: 3.69,  img: null },
+    { id: uid(), name: 'Eier 6 gekocht',        chf: 3.60,  eur: 1.27,  img: null },
+    { id: uid(), name: 'Bratfett',              chf: 4.95,  eur: 0.89,  img: null },
+    { id: uid(), name: 'Barilla Sauce',         chf: 3.50,  eur: 2.99,  img: null },
+    { id: uid(), name: 'Maggi Pulversauce',     chf: 2.35,  eur: 0.89,  img: null },
+    { id: uid(), name: 'Thommy Sauce',          chf: 4.50,  eur: 1.29,  img: null },
+    { id: uid(), name: 'Calcon XXL-Pack',       chf: 25.30, eur: 9.74,  img: null },
+    { id: uid(), name: 'Weichspüler',      chf: 9.00,  eur: 2.91,  img: null },
+    { id: uid(), name: 'Finish Klarsphüler',chf: 9.40, eur: 1.84,  img: null },
+    { id: uid(), name: 'Palmolive',             chf: 4.00,  eur: 0.99,  img: null },
+    { id: uid(), name: 'Dusch Das',             chf: 4.50,  eur: 1.79,  img: null },
+    { id: uid(), name: 'Buttermilch',           chf: 2.20,  eur: 0.69,  img: null },
+    { id: uid(), name: 'Nippon',                chf: 1.00,  eur: 1.29,  img: null },
+  ];
+}
 
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -656,7 +658,10 @@ function loadLocalDB() {
 function saveLocalDB(data) {
   try {
     localStorage.setItem(DB_KEY, JSON.stringify(data));
-  } catch(e) {}
+  } catch(e) {
+    // Inkognito oder Storage blockiert – kein Problem, Daten bleiben im Speicher
+    console.warn('localStorage nicht verfügbar – Daten nur im Arbeitsspeicher');
+  }
 }
 
 // ── JSONBin: Daten laden ──
@@ -705,33 +710,16 @@ function saveDB(data) {
 
 // ── Init: versuche zuerst Cloud, dann lokalen Cache ──
 async function initDB() {
-  // Zeige sofort lokale Daten (schnell)
+  // Lokale Daten laden – falls nichts vorhanden, Standarddaten verwenden
   let local = loadLocalDB();
-  if (!local) {
-    local = { products: DEFAULT_PRODUCTS };
-    saveLocalDB(local);
+  if (!local || !local.products || local.products.length === 0) {
+    // Frische IDs generieren für Standardprodukte
+    local = { products: getDefaultProducts() };
+    saveLocalDB(local); // schlägt im Inkognito fehl – macht nichts
   }
   db = local;
   renderAll();
-  updateSyncStatus('⏳ Synchronisiere...');
-
-  // Dann Cloud-Daten laden und ggf. überschreiben
-  const cloud = await loadFromCloud();
-  if (cloud && cloud.products) {
-    // Nur überschreiben wenn Cloud-Daten neuer/vorhanden
-    if (cloud.products.length > 0 || local.products.length === 0) {
-      db = cloud;
-      saveLocalDB(db);
-      renderAll();
-      updateSyncStatus('☁️ Synchronisiert');
-    } else {
-      updateSyncStatus('☁️ Synchronisiert');
-    }
-  } else if (JSONBIN_API_KEY.startsWith('HIER')) {
-    updateSyncStatus('⚠️ Kein Cloud-Key – nur lokal');
-  } else {
-    updateSyncStatus('📴 Offline – lokale Daten');
-  }
+  updateSyncStatus('');
   return db;
 }
 
@@ -1177,14 +1165,10 @@ function exportPDF() {
     head: [[
       '#',
       'Produkt',
-      'Preis CH
-(CHF)',
-      'Preis DE
-(EUR)',
-      'CH-Preis
-in EUR',
-      'Differenz
-(EUR)',
+      'Preis CH\n(CHF)',
+      'Preis DE\n(EUR)',
+      'CH-Preis\nin EUR',
+      'Differenz\n(EUR)',
       'Guenstiger'
     ]],
     body: rows,

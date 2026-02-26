@@ -536,11 +536,11 @@
   <div class="toolbar">
     <span class="toolbar-count" id="productCount">0 Produkte</span>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <button class="btn-io" onclick="exportPDF()" title="PDF erstellen" style="border-color:#c0392b;color:#e05555;">&#128196; PDF</button>
-      <button class="btn-io" onclick="exportData()" title="Daten exportieren">&#8659; Export</button>
-      <button class="btn-io" onclick="document.getElementById('importInput').click()" title="Daten importieren">>&#8657; Import JSON</button>#8657; Import</button>
+      <button class="btn-io" onclick="exportPDF()" title="PDF erstellen" style="border-color:#c0392b;color:#e05555;">📄 PDF</button>
+      <button class="btn-io" onclick="exportData()" title="Daten exportieren">↓ Export</button>
+      <button class="btn-io" onclick="document.getElementById('importInput').click()" title="Daten importieren">↑ Import</button>
       <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(event)">
-      <button class="btn-add" onclick="openAddDialog()">&#65291; Produkt hinzuf&uuml;gen</button>
+      <button class="btn-add" onclick="openAddDialog()">+ Produkt hinzufügen</button>
     </div>
   </div>
   <div class="product-list" id="productList"></div>

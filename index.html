@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Preisvergleich CH / DE</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root {
     --bg: #0f0f0f;
@@ -138,6 +140,22 @@
     transition: transform 0.1s, opacity 0.15s;
   }
   .btn-add:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-io {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 14px;
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .btn-io:hover { border-color: var(--accent2); color: var(--accent2); }
 
   /* ── PRODUCT LIST ── */
   .product-list { display: flex; flex-direction: column; gap: 8px; }
@@ -509,13 +527,21 @@
   </div>
   <button class="kurs-fetch-btn" onclick="fetchKurs()">↻ Aktueller Kurs</button>
   <span class="kurs-info" id="kursInfo">Bitte Kurs abrufen oder manuell eingeben</span>
+  <button class="kurs-fetch-btn" onclick="manualSync()" style="background:var(--accent2);margin-left:4px;" title="Manuell mit Cloud synchronisieren">&#9729; Sync</button>
+  <span class="kurs-info" id="syncStatus" style="margin-left:8px;color:#888;">&#8203;</span>
 </div>
 
 <!-- ── MAIN ── -->
 <main>
   <div class="toolbar">
     <span class="toolbar-count" id="productCount">0 Produkte</span>
-    <button class="btn-add" onclick="openAddDialog()">＋ Produkt hinzufügen</button>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button class="btn-io" onclick="exportPDF()" title="PDF erstellen" style="border-color:#c0392b;color:#e05555;">&#128196; PDF</button>
+      <button class="btn-io" onclick="exportData()" title="Daten exportieren">&#8659; Export</button>
+      <button class="btn-io" onclick="document.getElementById('importInput').click()" title="Daten importieren">&#8657; Import</button>
+      <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="btn-add" onclick="openAddDialog()">&#65291; Produkt hinzuf&uuml;gen</button>
+    </div>
   </div>
   <div class="product-list" id="productList"></div>
   <div class="empty-state" id="emptyState" style="display:none">
@@ -581,7 +607,14 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// DATA LAYER  –  JSON localStorage
+// ██  KONFIGURATION – HIER EINTRAGEN  ██
+// ═══════════════════════════════════════════════════════════════
+const JSONBIN_API_KEY = 'HIER_DEINEN_API_KEY_EINTRAGEN';   // z.B. '$2a$10$abc123...'
+const JSONBIN_BIN_ID  = 'HIER_DEINE_BIN_ID_EINTRAGEN';     // z.B. '64a3f2b1e1234567890'
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// DATA LAYER  –  JSONBin (online) + localStorage (offline-Cache)
 // ═══════════════════════════════════════════════════════════════
 const DB_KEY = 'preisvergleich_v1';
 
@@ -612,35 +645,105 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-function loadDB() {
+// ── Lokaler Cache (Fallback wenn offline) ──
+function loadLocalDB() {
   try {
     const raw = localStorage.getItem(DB_KEY);
     if (raw) return JSON.parse(raw);
   } catch(e) {}
   return null;
 }
-
-function saveDB(data) {
+function saveLocalDB(data) {
   try {
     localStorage.setItem(DB_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+// ── JSONBin: Daten laden ──
+async function loadFromCloud() {
+  if (JSONBIN_API_KEY.startsWith('HIER') || JSONBIN_BIN_ID.startsWith('HIER')) {
+    return null; // nicht konfiguriert
+  }
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    return json.record; // { products: [...] }
   } catch(e) {
-    showToast('⚠️ Speicherfehler: Daten zu gross (Bilder verkleinern)?');
+    console.warn('Cloud-Laden fehlgeschlagen:', e.message);
+    return null;
   }
 }
 
-function initDB() {
-  let db = loadDB();
-  if (!db) {
-    db = { products: DEFAULT_PRODUCTS };
-    saveDB(db);
+// ── JSONBin: Daten speichern ──
+async function saveToCloud(data) {
+  if (JSONBIN_API_KEY.startsWith('HIER') || JSONBIN_BIN_ID.startsWith('HIER')) {
+    return; // nicht konfiguriert
+  }
+  try {
+    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_API_KEY
+      },
+      body: JSON.stringify(data)
+    });
+  } catch(e) {
+    console.warn('Cloud-Speichern fehlgeschlagen:', e.message);
+    showToast('⚠️ Cloud-Sync fehlgeschlagen – lokal gespeichert');
+  }
+}
+
+// ── Speichern: lokal + cloud ──
+function saveDB(data) {
+  saveLocalDB(data);
+  saveToCloud(data); // async, läuft im Hintergrund
+}
+
+// ── Init: versuche zuerst Cloud, dann lokalen Cache ──
+async function initDB() {
+  // Zeige sofort lokale Daten (schnell)
+  let local = loadLocalDB();
+  if (!local) {
+    local = { products: DEFAULT_PRODUCTS };
+    saveLocalDB(local);
+  }
+  db = local;
+  renderAll();
+  updateSyncStatus('⏳ Synchronisiere...');
+
+  // Dann Cloud-Daten laden und ggf. überschreiben
+  const cloud = await loadFromCloud();
+  if (cloud && cloud.products) {
+    // Nur überschreiben wenn Cloud-Daten neuer/vorhanden
+    if (cloud.products.length > 0 || local.products.length === 0) {
+      db = cloud;
+      saveLocalDB(db);
+      renderAll();
+      updateSyncStatus('☁️ Synchronisiert');
+    } else {
+      updateSyncStatus('☁️ Synchronisiert');
+    }
+  } else if (JSONBIN_API_KEY.startsWith('HIER')) {
+    updateSyncStatus('⚠️ Kein Cloud-Key – nur lokal');
+  } else {
+    updateSyncStatus('📴 Offline – lokale Daten');
   }
   return db;
+}
+
+function updateSyncStatus(msg) {
+  const el = document.getElementById('syncStatus');
+  if (el) el.textContent = msg;
 }
 
 // ═══════════════════════════════════════════════════════════════
 // APP STATE
 // ═══════════════════════════════════════════════════════════════
-let db = initDB();
+let db = { products: [] }; // wird durch initDB() befüllt
 let expandedId = null;
 let kurs = parseFloat(localStorage.getItem('wechselkurs') || '0.9400');
 let pendingDeleteId = null;
@@ -1020,9 +1123,242 @@ function showToast(msg) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// PDF EXPORT
+// ═══════════════════════════════════════════════════════════════
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const kursVal = parseFloat(document.getElementById('kursInput').value) || kurs;
+  const date = new Date().toLocaleDateString('de-CH');
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // ── Header Hintergrund ──
+  doc.setFillColor(15, 15, 15);
+  doc.rect(0, 0, pageW, 28, 'F');
+
+  // ── Titel ──
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(232, 197, 71); // accent gelb
+  doc.text('Preisvergleich CH / DE', 14, 12);
+
+  doc.setFontSize(9);
+  doc.setTextColor(180, 180, 180);
+  doc.text('Erstellt am: ' + date + '   |   Wechselkurs: 1 CHF = ' + kursVal.toFixed(4) + ' EUR', 14, 20);
+
+  // ── Flaggen-Legende ──
+  doc.setFontSize(8);
+  doc.setTextColor(140, 140, 140);
+  doc.text('Flagge zeigt: wo das Produkt guenstiger ist', pageW - 14, 20, { align: 'right' });
+
+  // ── Tabellen-Daten aufbereiten ──
+  const rows = db.products.map((p, i) => {
+    const chfInEur = p.chf * kursVal;
+    const diff = Math.abs(chfInEur - p.eur);
+    const chCheaper = chfInEur < p.eur;
+    const diffFormatted = diff.toFixed(2).replace('.', '.');
+    const winner = chCheaper ? 'CH guenstiger' : 'DE guenstiger';
+    const saving = diffFormatted + ' EUR';
+
+    return [
+      i + 1,
+      p.name,
+      p.chf.toFixed(2) + ' CHF',
+      p.eur.toFixed(2) + ' EUR',
+      chfInEur.toFixed(2) + ' EUR',
+      saving,
+      winner
+    ];
+  });
+
+  // ── AutoTable ──
+  doc.autoTable({
+    startY: 32,
+    head: [[
+      '#',
+      'Produkt',
+      'Preis CH
+(CHF)',
+      'Preis DE
+(EUR)',
+      'CH-Preis
+in EUR',
+      'Differenz
+(EUR)',
+      'Guenstiger'
+    ]],
+    body: rows,
+    theme: 'grid',
+    styles: {
+      font: 'helvetica',
+      fontSize: 8.5,
+      cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+      textColor: [30, 30, 30],
+      lineColor: [200, 200, 200],
+      lineWidth: 0.2,
+      overflow: 'linebreak',
+    },
+    headStyles: {
+      fillColor: [35, 35, 35],
+      textColor: [232, 197, 71],
+      fontStyle: 'bold',
+      fontSize: 8,
+      halign: 'center',
+    },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 8 },
+      1: { cellWidth: 55 },
+      2: { halign: 'right', cellWidth: 22 },
+      3: { halign: 'right', cellWidth: 22 },
+      4: { halign: 'right', cellWidth: 22 },
+      5: { halign: 'right', cellWidth: 22, fontStyle: 'bold' },
+      6: { halign: 'center', cellWidth: 28 },
+    },
+    alternateRowStyles: {
+      fillColor: [248, 248, 248],
+    },
+    didParseCell: function(data) {
+      // Farbe für "Guenstiger"-Spalte
+      if (data.column.index === 6 && data.section === 'body') {
+        if (data.cell.raw.includes('CH')) {
+          data.cell.styles.textColor = [180, 30, 40];   // CH rot
+          data.cell.styles.fontStyle = 'bold';
+        } else {
+          data.cell.styles.textColor = [20, 100, 180];  // DE blau
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+      // Differenz-Spalte grün einfärben
+      if (data.column.index === 5 && data.section === 'body') {
+        data.cell.styles.textColor = [40, 150, 80];
+        data.cell.styles.fontStyle = 'bold';
+      }
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  // ── Zusammenfassung ──
+  const finalY = doc.lastAutoTable.finalY + 8;
+  const total = db.products.length;
+  const chWins = db.products.filter(p => (p.chf * kursVal) < p.eur).length;
+  const deWins = total - chWins;
+  const avgSaving = db.products.reduce((sum, p) => {
+    return sum + Math.abs((p.chf * kursVal) - p.eur);
+  }, 0) / (total || 1);
+
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(14, finalY, pageW - 28, 22, 3, 3, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.roundedRect(14, finalY, pageW - 28, 22, 3, 3, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(50, 50, 50);
+  doc.text('Zusammenfassung:', 20, finalY + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(180, 30, 40);
+  doc.text('CH guenstiger: ' + chWins + ' Produkte', 20, finalY + 14);
+  doc.setTextColor(20, 100, 180);
+  doc.text('DE guenstiger: ' + deWins + ' Produkte', 70, finalY + 14);
+  doc.setTextColor(40, 150, 80);
+  doc.text('Ø Ersparnis: ' + avgSaving.toFixed(2) + ' EUR pro Produkt', 120, finalY + 14);
+
+  // ── Footer ──
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7.5);
+    doc.setTextColor(160, 160, 160);
+    doc.text('Preisvergleich CH/DE  –  Seite ' + i + ' von ' + pageCount, pageW / 2, 290, { align: 'center' });
+  }
+
+  // ── Speichern ──
+  const filename = 'Preisvergleich_' + date.replace(/\./g, '-') + '.pdf';
+  doc.save(filename);
+  showToast('✓ PDF erstellt: ' + filename);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MANUAL SYNC
+// ═══════════════════════════════════════════════════════════════
+async function manualSync() {
+  if (JSONBIN_API_KEY.startsWith('HIER') || JSONBIN_BIN_ID.startsWith('HIER')) {
+    showToast('⚠️ Bitte erst API-Key und Bin-ID eintragen!');
+    return;
+  }
+  updateSyncStatus('⏳ Synchronisiere...');
+  const cloud = await loadFromCloud();
+  if (cloud && cloud.products) {
+    if (cloud.products.length >= db.products.length) {
+      db = cloud;
+      saveLocalDB(db);
+      renderAll();
+      showToast('☁️ Cloud-Daten geladen (' + db.products.length + ' Produkte)');
+    } else {
+      // Lokale Daten sind neuer – hochladen
+      await saveToCloud(db);
+      showToast('☁️ Lokale Daten in Cloud gespeichert');
+    }
+    updateSyncStatus('☁️ Synchronisiert');
+  } else {
+    showToast('⚠️ Sync fehlgeschlagen');
+    updateSyncStatus('⚠️ Sync-Fehler');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════════════════════════
+function exportData() {
+  const json = JSON.stringify(db, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = 'preisvergleich_' + date + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Daten exportiert');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed.products || !Array.isArray(parsed.products)) {
+        showToast('⚠️ Ungültige Datei – kein gültiges Format');
+        return;
+      }
+      // Ask confirmation if there are already products
+      if (db.products.length > 0) {
+        if (!confirm('Achtung: Alle aktuellen Daten werden mit den importierten Daten überschrieben. Fortfahren?')) {
+          event.target.value = '';
+          return;
+        }
+      }
+      db = parsed;
+      saveDB(db);
+      expandedId = null;
+      renderAll();
+      showToast('✓ ' + db.products.length + ' Produkte importiert');
+    } catch(err) {
+      showToast('⚠️ Fehler beim Lesen der Datei');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
-renderAll();
+initDB(); // async – lädt Cloud-Daten und rendert
 </script>
 </body>
 </html>

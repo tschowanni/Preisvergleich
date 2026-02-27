@@ -10,7 +10,10 @@
 <meta name="theme-color" content="#0d0d0d">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="apple-touch-icon" href="icon-512.png">
-<title>Preisvergleich CH / DE v4</title>
+<title>Preisvergleich CH / DE</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -190,12 +193,12 @@ html, body {
   padding: 14px 14px 14px 16px;
   cursor: pointer;
   gap: 10px;
-  min-height: 64px;
+  min-height: 76px;
 }
 .card-name {
   flex: 1;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   line-height: 1.3;
 }
 .card-prices {
@@ -207,9 +210,9 @@ html, body {
 }
 .price-tag {
   font-family: var(--mono);
-  font-size: 0.75rem;
-  font-weight: 500;
-  padding: 2px 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 4px 10px;
   border-radius: 6px;
 }
 .price-chf { background: rgba(217,48,37,0.15); color: #f08080; }
@@ -609,6 +612,7 @@ html, body {
   </div>
   <button class="kurs-btn" onclick="fetchKurs()">↻ Kurs</button>
   <div class="sync-status" id="syncStatus"></div>
+  <div style="font-family:var(--mono);font-size:0.6rem;color:#444;width:100%;text-align:right;">v202602271457</div>
 </div>
 
 <!-- ── TOOLBAR ── -->

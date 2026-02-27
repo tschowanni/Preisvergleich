@@ -2,619 +2,693 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Preisvergleich">
-<meta name="theme-color" content="#0f0f0f">
+<meta name="theme-color" content="#0d0d0d">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-512.png">
-<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
-<title>Preisvergleich CH / DE v3</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>Preisvergleich CH / DE v4</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-  :root {
-    --bg: #0f0f0f;
-    --surface: #1a1a1a;
-    --surface2: #232323;
-    --border: #2e2e2e;
-    --accent: #e8c547;
-    --accent2: #5b9cf6;
-    --text: #f0f0f0;
-    --muted: #888;
-    --danger: #e05555;
-    --success: #55c96a;
-    --ch-red: #e8343a;
-    --de-gold: #e8c547;
-    --radius: 12px;
-    --mono: 'DM Mono', 'Courier New', monospace;
-    --sans: 'Syne', 'Trebuchet MS', sans-serif;
-  }
+:root {
+  --bg:       #0d0d0d;
+  --surface:  #181818;
+  --card:     #1f1f1f;
+  --border:   #2a2a2a;
+  --accent:   #e8c547;
+  --accent2:  #5b9cf6;
+  --text:     #f0f0f0;
+  --muted:    #777;
+  --danger:   #e05555;
+  --ch:       #d93025;
+  --mono:     'DM Mono', monospace;
+  --sans:     'Outfit', sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  body {
-    font-family: var(--sans);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+html, body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
 
-  /* ── HEADER ── */
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 20px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .header-title {
-    font-size: 1.25rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    flex: 1;
-  }
-  .header-title span { color: var(--accent); }
+/* ── HEADER ── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: calc(14px + var(--safe-top)) 16px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.app-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.app-title span { color: var(--accent); }
+.header-actions { display: flex; gap: 8px; }
+.icon-btn {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.icon-btn:active { background: var(--border); }
+.icon-btn.danger { color: var(--danger); border-color: rgba(224,85,85,0.3); }
 
-  /* ── WECHSELKURS BAR ── */
-  .kurs-bar {
-    background: #1e1e00;
-    border-bottom: 1px solid #3a3800;
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .kurs-label {
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .kurs-input-wrap {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #2a2800;
-    border: 1px solid #504e00;
-    border-radius: 8px;
-    padding: 4px 10px;
-  }
-  .kurs-input-wrap input {
-    background: none;
-    border: none;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 1rem;
-    font-weight: 500;
-    width: 80px;
-    outline: none;
-  }
-  .kurs-unit { color: var(--muted); font-family: var(--mono); font-size: 0.85rem; }
-  .kurs-fetch-btn {
-    font-family: var(--sans);
-    font-size: 0.75rem;
-    font-weight: 600;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 6px;
-    padding: 5px 12px;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
-  .kurs-fetch-btn:hover { opacity: 0.85; }
-  .kurs-info { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-left: auto; }
+/* ── WECHSELKURS ── */
+.kurs-section {
+  background: #131300;
+  border-bottom: 1px solid #2a2700;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.kurs-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.kurs-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1e1d00;
+  border: 1px solid #3d3b00;
+  border-radius: 10px;
+  padding: 6px 12px;
+  flex: 1;
+  min-width: 120px;
+}
+.kurs-field input {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 500;
+  width: 100%;
+  outline: none;
+}
+.kurs-unit { color: var(--muted); font-family: var(--mono); font-size: 0.8rem; }
+.kurs-btn {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.kurs-btn:active { opacity: 0.8; }
+.sync-status {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  width: 100%;
+}
 
-  /* ── MAIN ── */
-  main { padding: 16px 20px; max-width: 900px; margin: 0 auto; }
+/* ── TOOLBAR ── */
+.toolbar {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.product-count {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.toolbar-btns { display: flex; gap: 8px; }
+.add-btn {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.add-btn:active { opacity: 0.85; }
 
-  /* ── TOOLBAR ── */
-  .toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    gap: 12px;
-  }
-  .toolbar-count {
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-  .btn-add {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: var(--radius);
-    padding: 9px 18px;
-    font-family: var(--sans);
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.1s, opacity 0.15s;
-  }
-  .btn-add:hover { opacity: 0.9; transform: translateY(-1px); }
-  .btn-io {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 9px 14px;
-    font-family: var(--sans);
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: border-color 0.15s;
-  }
-  .btn-io:hover { border-color: var(--accent2); color: var(--accent2); }
+/* ── PRODUCT LIST ── */
+.product-list {
+  padding: 0 12px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-  /* ── PRODUCT LIST ── */
-  .product-list { display: flex; flex-direction: column; gap: 8px; }
+.product-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.product-card.expanded { border-color: var(--accent); }
 
-  .product-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .product-card.expanded { border-color: var(--accent); }
+/* ── CARD HEADER ROW ── */
+.card-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 14px 14px 16px;
+  cursor: pointer;
+  gap: 10px;
+  min-height: 64px;
+}
+.card-name {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.card-prices {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.price-tag {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.price-chf { background: rgba(217,48,37,0.15); color: #f08080; }
+.price-eur { background: rgba(91,156,246,0.15); color: #91b8f8; }
+.chevron {
+  color: var(--muted);
+  font-size: 0.75rem;
+  transition: transform 0.25s;
+  flex-shrink: 0;
+}
+.product-card.expanded .chevron { transform: rotate(180deg); }
 
-  .product-row {
-    display: flex;
-    align-items: center;
-    padding: 14px 16px;
-    cursor: pointer;
-    gap: 12px;
-    user-select: none;
-  }
-  .product-name {
-    flex: 1;
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-  .price-badges { display: flex; gap: 8px; align-items: center; }
-  .badge {
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-weight: 500;
-  }
-  .badge-chf { background: rgba(232,52,58,0.15); color: #e8a0a2; border: 1px solid rgba(232,52,58,0.3); }
-  .badge-eur { background: rgba(91,156,246,0.15); color: #91b8f8; border: 1px solid rgba(91,156,246,0.3); }
-  .chevron {
-    color: var(--muted);
-    font-size: 0.8rem;
-    transition: transform 0.25s;
-  }
-  .product-card.expanded .chevron { transform: rotate(180deg); }
+/* ── EXPANDED DETAIL ── */
+.card-detail {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 16px;
+  flex-direction: column;
+  gap: 14px;
+  animation: slideIn 0.2s ease;
+}
+.product-card.expanded .card-detail { display: flex; }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-  /* ── EXPANDED DETAIL ── */
-  .product-detail {
-    display: none;
-    padding: 0 16px 16px;
-    border-top: 1px solid var(--border);
-    animation: slideDown 0.2s ease;
-  }
-  .product-card.expanded .product-detail { display: block; }
+/* ── FIELDS ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.field label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.field input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 1rem;
+  outline: none;
+  width: 100%;
+  -webkit-appearance: none;
+}
+.field input:focus { border-color: var(--accent); }
 
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+/* price row: two fields side by side */
+.price-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-  .detail-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 14px;
-  }
-  @media (max-width: 560px) { .detail-grid { grid-template-columns: 1fr; } }
+/* ── CONVERTED ── */
+.converted-info {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.converted-info .lbl {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.converted-info .val {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--accent2);
+}
 
-  .detail-left { display: flex; flex-direction: column; gap: 10px; }
-  .detail-right {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
+/* ── FAZIT ── */
+.fazit {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.fazit-text {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.fazit-text strong { color: var(--accent); font-size: 1rem; }
+.fazit-flags { display: flex; gap: 12px; align-items: center; }
+.flag {
+  width: 44px; height: 30px;
+  border-radius: 6px;
+  object-fit: cover;
+  transition: opacity 0.3s, transform 0.3s;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.flag.dim { opacity: 0.15; transform: scale(0.88); }
 
-  .field-group label {
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    display: block;
-    margin-bottom: 4px;
-    font-family: var(--mono);
-  }
-  .field-group input[type="text"],
-  .field-group input[type="number"] {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 0.95rem;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .field-group input:focus { border-color: var(--accent); }
+/* ── IMAGE SECTION ── */
+.img-section {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.img-preview {
+  flex-shrink: 0;
+  width: 100px;
+  height: 80px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.img-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.img-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
+}
+.img-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.img-btn:active { background: var(--border); }
+.img-btn.del { color: var(--danger); border-color: rgba(224,85,85,0.25); }
 
-  /* Converted price display */
-  .converted-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 2px;
-  }
-  .converted-label {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--muted);
-  }
-  .converted-value {
-    font-family: var(--mono);
-    font-size: 0.88rem;
-    color: var(--accent2);
-    font-weight: 500;
-  }
+/* ── ACTION BUTTONS ── */
+.action-row {
+  display: flex;
+  gap: 8px;
+}
+.btn-save {
+  flex: 1;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-save:active { opacity: 0.85; }
+.btn-del {
+  background: rgba(224,85,85,0.1);
+  color: var(--danger);
+  border: 1px solid rgba(224,85,85,0.25);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-del:active { background: rgba(224,85,85,0.2); }
 
-  /* Fazit */
-  .fazit-box {
-    margin-top: 12px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  .fazit-text {
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    color: var(--text);
-  }
-  .fazit-text strong { color: var(--accent); }
-  .fazit-flags { display: flex; gap: 10px; align-items: center; }
-  .flag-img {
-    width: 40px;
-    height: 27px;
-    object-fit: cover;
-    border-radius: 4px;
-    transition: opacity 0.3s, transform 0.3s;
-  }
-  .flag-img.dim { opacity: 0.2; transform: scale(0.9); }
+/* ── BOTTOM NAV (action sheet) ── */
+.bottom-sheet-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  align-items: flex-end;
+}
+.bottom-sheet-overlay.active { display: flex; }
+.bottom-sheet {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px calc(20px + var(--safe-bot));
+  width: 100%;
+  animation: sheetUp 0.25s cubic-bezier(.34,1.3,.64,1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.sheet-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-family: var(--mono);
+  margin-bottom: 4px;
+}
+.sheet-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 16px;
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sheet-btn:active { background: var(--border); }
+.sheet-btn.danger { color: var(--danger); }
+.sheet-btn .ico { font-size: 1.3rem; width: 28px; text-align: center; }
+.sheet-cancel {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 4px;
+}
 
-  /* Product image */
-  .product-image-wrap {
-    width: 100%;
-    aspect-ratio: 4/3;
-    max-height: 180px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    cursor: pointer;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .product-image-wrap img {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    display: block;
-  }
-  .img-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s;
-    font-size: 1.5rem;
-  }
-  .product-image-wrap:hover .img-overlay { opacity: 1; }
+/* ── MODAL DIALOGS ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 300;
+  align-items: flex-end;
+  padding: 0;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px calc(24px + var(--safe-bot));
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: sheetUp 0.25s cubic-bezier(.34,1.3,.64,1);
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+.modal h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.btn-cancel {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 12px;
+  padding: 14px;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
 
-  .img-buttons { display: flex; gap: 6px; width: 100%; }
-  .btn-img {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 8px;
-    padding: 7px 6px;
-    font-size: 0.72rem;
-    font-family: var(--sans);
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: border-color 0.15s;
-  }
-  .btn-img:hover { border-color: var(--accent2); }
-  .btn-img-del { color: var(--danger); }
-  .btn-img-del:hover { border-color: var(--danger); }
+/* ── LIGHTBOX ── */
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox.active { display: flex; }
+.lightbox img {
+  max-width: 95vw;
+  max-height: 85dvh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.lightbox-close {
+  position: fixed;
+  top: calc(20px + var(--safe-top));
+  right: 20px;
+  color: #fff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  background: rgba(0,0,0,0.5);
+  width: 44px; height: 44px;
+  border-radius: 22px;
+  display: flex; align-items: center; justify-content: center;
+}
 
-  /* Action buttons */
-  .action-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 14px;
-  }
-  .btn-save {
-    flex: 1;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 8px;
-    padding: 9px;
-    font-family: var(--sans);
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
-  .btn-save:hover { opacity: 0.88; }
-  .btn-delete {
-    background: rgba(224,85,85,0.12);
-    color: var(--danger);
-    border: 1px solid rgba(224,85,85,0.3);
-    border-radius: 8px;
-    padding: 9px 16px;
-    font-family: var(--sans);
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .btn-delete:hover { background: rgba(224,85,85,0.22); }
+/* ── CONFIRM ── */
+.confirm-modal {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px calc(24px + var(--safe-bot));
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: sheetUp 0.25s cubic-bezier(.34,1.3,.64,1);
+}
+.confirm-modal p { color: var(--muted); font-size: 0.92rem; line-height: 1.5; }
 
-  /* ── HIDDEN FILE INPUT ── */
-  #fileInput { display: none; }
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--muted);
+}
+.empty-state .ico { font-size: 3.5rem; margin-bottom: 14px; }
+.empty-state p { font-size: 0.9rem; }
 
-  /* ── LIGHTBOX ── */
-  .lightbox {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.92);
-    z-index: 999;
-    align-items: center;
-    justify-content: center;
-    cursor: zoom-out;
-  }
-  .lightbox.active { display: flex; }
-  .lightbox img {
-    max-width: 92vw;
-    max-height: 88vh;
-    border-radius: 12px;
-    object-fit: contain;
-    box-shadow: 0 0 60px rgba(0,0,0,0.8);
-  }
-  .lightbox-close {
-    position: absolute;
-    top: 20px; right: 24px;
-    color: #fff;
-    font-size: 2rem;
-    cursor: pointer;
-    line-height: 1;
-  }
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: calc(24px + var(--safe-bot));
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: rgba(30,30,30,0.96);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  z-index: 999;
+  white-space: nowrap;
+  transition: transform 0.3s cubic-bezier(.34,1.4,.64,1);
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* ── ADD DIALOG ── */
-  .overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-  }
-  .overlay.active { display: flex; }
-  .dialog {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    width: min(480px, 95vw);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    animation: popIn 0.2s ease;
-  }
-  @keyframes popIn {
-    from { opacity: 0; transform: scale(0.95) translateY(10px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  .dialog h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
-  }
-  .dialog-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
-  .btn-cancel {
-    background: var(--surface2);
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 18px;
-    font-family: var(--sans);
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  /* ── CONFIRM DIALOG ── */
-  .confirm-dialog {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    width: min(380px, 95vw);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    animation: popIn 0.2s ease;
-  }
-  .confirm-dialog p { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
-
-  /* ── TOAST ── */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 20px;
-    border-radius: 999px;
-    font-family: var(--mono);
-    font-size: 0.82rem;
-    z-index: 9999;
-    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
-    pointer-events: none;
-  }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-
-  /* ── EMPTY STATE ── */
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-  }
-  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
-  .empty-state p { font-size: 0.9rem; }
-
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 </head>
 <body>
 
-<!-- ── HEADER ── -->
-<header>
-  <div class="header-title">Preis<span>vergleich</span> 🇨🇭 🇩🇪</div>
-</header>
-
-<!-- ── WECHSELKURS BAR ── -->
-<div class="kurs-bar">
-  <span class="kurs-label">1 CHF =</span>
-  <div class="kurs-input-wrap">
-    <input type="number" id="kursInput" step="0.0001" value="0.9400">
-    <span class="kurs-unit">EUR</span>
-  </div>
-  <button class="kurs-fetch-btn" onclick="fetchKurs()">↻ Aktueller Kurs</button>
-  <span class="kurs-info" id="kursInfo">Bitte Kurs abrufen oder manuell eingeben</span>
-  <button class="kurs-fetch-btn" onclick="manualSync()" style="background:var(--accent2);margin-left:4px;" title="Manuell mit Cloud synchronisieren">&#9729; Sync</button>
-  <span class="kurs-info" id="syncStatus" style="margin-left:8px;color:#888;">&#8203;</span>
+<!-- hidden flag sources -->
+<div style="display:none">
+  <img id="flagCH_src" src="ch.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 27%22><rect fill=%22%23e8343a%22 width=%2240%22 height=%2227%22/><rect fill=%22white%22 x=%2215%22 y=%225%22 width=%2210%22 height=%2217%22/><rect fill=%22white%22 x=%228%22 y=%2210%22 width=%2224%22 height=%227%22/></svg>'">
+  <img id="flagDE_src" src="de.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 27%22><rect fill=%22%23111%22 width=%2240%22 height=%229%22/><rect fill=%22%23e02020%22 y=%229%22 width=%2240%22 height=%229%22/><rect fill=%22%23ffce00%22 y=%2218%22 width=%2240%22 height=%229%22/></svg>'">
 </div>
 
-<!-- ── MAIN ── -->
-<main>
-  <div class="toolbar">
-    <span class="toolbar-count" id="productCount">0 Produkte</span>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <button class="btn-io" onclick="exportPDF()" title="PDF erstellen" style="border-color:#c0392b;color:#e05555;">📄 PDF</button>
-      <button class="btn-io" onclick="exportData()" title="Daten exportieren">↓ Export</button>
-      <button class="btn-io" onclick="document.getElementById('importInput').click()" title="Daten importieren">↑ Import</button>
-      <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(event)">
-      <button class="btn-add" onclick="openAddDialog()">+ Produkt hinzufügen</button>
-    </div>
-  </div>
-  <div class="product-list" id="productList"></div>
-  <div class="empty-state" id="emptyState" style="display:none">
-    <div class="icon">🛒</div>
-    <p>Noch keine Produkte. Füge das erste hinzu!</p>
-  </div>
-</main>
+<!-- hidden inputs -->
+<input type="file" id="fileInput"   accept="image/*"              style="display:none" onchange="handleFileSelect(event)">
+<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(event)">
+<input type="file" id="importInput" accept=".json"                style="display:none" onchange="importData(event)">
 
-<!-- ── LIGHTBOX ── -->
-<div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <span class="lightbox-close" onclick="closeLightbox()">✕</span>
-  <img id="lightboxImg" src="" alt="">
+<!-- ── HEADER ── -->
+<header class="app-header">
+  <div class="app-title">Preis<span>vergleich</span></div>
+  <div class="header-actions">
+    <button class="icon-btn" onclick="openMenu()" title="Menü">⋯</button>
+  </div>
+</header>
+
+<!-- ── WECHSELKURS ── -->
+<div class="kurs-section">
+  <span class="kurs-label">1 CHF =</span>
+  <div class="kurs-field">
+    <input type="number" id="kursInput" step="0.0001" value="0.9400" inputmode="decimal">
+    <span class="kurs-unit">EUR</span>
+  </div>
+  <button class="kurs-btn" onclick="fetchKurs()">↻ Kurs</button>
+  <div class="sync-status" id="syncStatus"></div>
+</div>
+
+<!-- ── TOOLBAR ── -->
+<div class="toolbar">
+  <span class="product-count" id="productCount">0 Produkte</span>
+  <button class="add-btn" onclick="openAddDialog()">＋ Hinzufügen</button>
+</div>
+
+<!-- ── PRODUCT LIST ── -->
+<div class="product-list" id="productList"></div>
+<div class="empty-state" id="emptyState" style="display:none">
+  <div class="ico">🛒</div>
+  <p>Noch keine Produkte.<br>Tippe auf + Hinzufügen.</p>
+</div>
+
+<!-- ── MENU BOTTOM SHEET ── -->
+<div class="bottom-sheet-overlay" id="menuOverlay" onclick="closeMenu()">
+  <div class="bottom-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-title">Optionen</div>
+    <button class="sheet-btn" onclick="exportPDF(); closeMenu()">
+      <span class="ico">📄</span> PDF erstellen &amp; senden
+    </button>
+    <button class="sheet-btn" onclick="exportData(); closeMenu()">
+      <span class="ico">↓</span> Daten exportieren (JSON)
+    </button>
+    <button class="sheet-btn" onclick="closeMenu(); document.getElementById('importInput').click()">
+      <span class="ico">↑</span> Daten importieren (JSON)
+    </button>
+    <button class="sheet-cancel" onclick="closeMenu()">Abbrechen</button>
+  </div>
 </div>
 
 <!-- ── ADD DIALOG ── -->
-<div class="overlay" id="addOverlay">
-  <div class="dialog">
+<div class="modal-overlay" id="addOverlay">
+  <div class="modal">
     <h2>Neues Produkt</h2>
-    <div class="field-group">
+    <div class="field">
       <label>Produktname</label>
-      <input type="text" id="addName" placeholder="z.B. Barilla Pasta 500gr">
+      <input type="text" id="addName" placeholder="z.B. Barilla Pasta 500gr" autocomplete="off">
     </div>
-    <div class="field-group">
-      <label>Preis CHF (Schweiz)</label>
-      <input type="number" id="addCHF" placeholder="0.00" step="0.01">
+    <div class="price-row">
+      <div class="field">
+        <label>Preis CHF 🇨🇭</label>
+        <input type="number" id="addCHF" placeholder="0.00" step="0.01" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Preis EUR 🇩🇪</label>
+        <input type="number" id="addEUR" placeholder="0.00" step="0.01" inputmode="decimal">
+      </div>
     </div>
-    <div class="field-group">
-      <label>Preis EUR (Deutschland)</label>
-      <input type="number" id="addEUR" placeholder="0.00" step="0.01">
-    </div>
-    <div class="dialog-buttons">
+    <div class="modal-actions">
       <button class="btn-cancel" onclick="closeAddDialog()">Abbrechen</button>
-      <button class="btn-save" style="flex:none;padding:9px 24px" onclick="addProduct()">Hinzufügen</button>
+      <button class="btn-save" onclick="addProduct()">Hinzufügen</button>
     </div>
   </div>
 </div>
 
-<!-- ── CONFIRM DIALOG ── -->
-<div class="overlay" id="confirmOverlay">
-  <div class="confirm-dialog">
-    <h2>Löschen bestätigen</h2>
+<!-- ── CONFIRM DELETE ── -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="confirm-modal">
+    <h2>Löschen?</h2>
     <p id="confirmText"></p>
-    <div class="dialog-buttons">
+    <div class="modal-actions">
       <button class="btn-cancel" onclick="closeConfirm()">Abbrechen</button>
-      <button class="btn-delete" onclick="confirmDelete()">Ja, löschen</button>
+      <button class="btn-del" onclick="confirmDelete()">Ja, löschen</button>
     </div>
   </div>
 </div>
 
-<!-- ── HIDDEN FILE INPUT ── -->
-<input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
-<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(event)">
+<!-- ── LIGHTBOX ── -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="lightbox-close">✕</div>
+  <img id="lightboxImg" src="" alt="">
+</div>
 
 <!-- ── TOAST ── -->
 <div class="toast" id="toast"></div>
 
-<!-- ── FLAG IMAGES (embedded as data URIs) ── -->
-<!-- We use actual image files if available, otherwise SVG flags -->
-<div style="display:none">
-  <img id="flagCH_src" src="ch.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 27%22><rect fill=%22%23e8343a%22 width=%2240%22 height=%2227%22/><rect fill=%22white%22 x=%2215%22 y=%225%22 width=%2210%22 height=%2217%22/><rect fill=%22white%22 x=%228%22 y=%2210%22 width=%2224%22 height=%227%22/></svg>'">
-  <img id="flagDE_src" src="de.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 27%22><rect fill=%22%23000%22 width=%2240%22 height=%229%22/><rect fill=%22%23e02020%22 y=%229%22 width=%2240%22 height=%229%22/><rect fill=%22%23ffce00%22 y=%2218%22 width=%2240%22 height=%229%22/></svg>'">
-</div>
-
 <script>
+
 // ═══════════════════════════════════════════════════════════════
 // ██  KONFIGURATION – HIER EINTRAGEN  ██
 // ═══════════════════════════════════════════════════════════════
@@ -834,78 +908,70 @@ function renderCard(p) {
   const chfInEur = p.chf * kurs;
   const diff = Math.abs(chfInEur - p.eur);
   const chCheaper = chfInEur < p.eur;
+  const imgSrc = p.img || 'keinfoto.jpg';
+  const chFlagSrc = document.getElementById('flagCH_src').src;
+  const deFlagSrc = document.getElementById('flagDE_src').src;
 
   const card = document.createElement('div');
   card.className = 'product-card' + (isExpanded ? ' expanded' : '');
   card.dataset.id = p.id;
 
-  // Image src
-  const imgSrc = p.img || 'keinfoto.jpg';
-
-  // Flag img tags
-  const chFlagSrc = document.getElementById('flagCH_src') ? document.getElementById('flagCH_src').src : 'ch.jpg';
-  const deFlagSrc = document.getElementById('flagDE_src') ? document.getElementById('flagDE_src').src : 'de.jpg';
-
   card.innerHTML = `
-    <div class="product-row" onclick="toggleCard('${p.id}')">
-      <div class="product-name">${escHtml(p.name)}</div>
-      <div class="price-badges">
-        <span class="badge badge-chf">${formatCHF(p.chf)} CHF</span>
-        <span class="badge badge-eur">${formatCHF(p.eur)} EUR</span>
+    <div class="card-row" onclick="toggleCard('${p.id}')">
+      <div class="card-name">${escHtml(p.name)}</div>
+      <div class="card-prices">
+        <span class="price-tag price-chf">${formatCHF(p.chf)} CHF</span>
+        <span class="price-tag price-eur">${formatCHF(p.eur)} EUR</span>
       </div>
       <span class="chevron">▼</span>
     </div>
-    <div class="product-detail">
-      <div class="detail-grid">
-        <div class="detail-left">
-          <div class="field-group">
-            <label>Produktname</label>
-            <input type="text" id="name_${p.id}" value="${escHtml(p.name)}">
-          </div>
-          <div class="field-group">
-            <label>Preis CHF (Schweiz 🇨🇭)</label>
-            <input type="number" id="chf_${p.id}" value="${p.chf}" step="0.01" oninput="onPriceChange('${p.id}')">
-          </div>
-          <div class="field-group">
-            <label>Preis EUR (Deutschland 🇩🇪)</label>
-            <input type="number" id="eur_${p.id}" value="${p.eur}" step="0.01" oninput="onPriceChange('${p.id}')">
-          </div>
-          <div class="converted-row">
-            <span class="converted-label">CHF-Preis in EUR:</span>
-            <span class="converted-value" id="conv_${p.id}">${formatCHF(chfInEur)} EUR</span>
-          </div>
-          <div class="fazit-box">
-            <span class="fazit-text" id="fazit_${p.id}">
-              <strong>${formatCHF(diff)} EUR</strong> günstiger in
-            </span>
-            <div class="fazit-flags">
-              <img class="flag-img ${chCheaper ? '' : 'dim'}" id="flagCH_${p.id}" src="${chFlagSrc}" alt="CH" title="Schweiz">
-              <img class="flag-img ${chCheaper ? 'dim' : ''}" id="flagDE_${p.id}" src="${deFlagSrc}" alt="DE" title="Deutschland">
-            </div>
-          </div>
+    <div class="card-detail">
+      <div class="field">
+        <label>Produktname</label>
+        <input type="text" id="name_${p.id}" value="${escHtml(p.name)}" autocomplete="off">
+      </div>
+      <div class="price-row">
+        <div class="field">
+          <label>Preis CHF 🇨🇭</label>
+          <input type="number" id="chf_${p.id}" value="${p.chf}" step="0.01" inputmode="decimal" oninput="onPriceChange('${p.id}')">
         </div>
-        <div class="detail-right">
-          <div class="product-image-wrap" onclick="openLightbox('${p.id}')">
-            <img id="img_${p.id}" src="${imgSrc}" alt="Produktbild"
-              onerror="this.src='keinfoto.jpg'">
-            <div class="img-overlay">🔍</div>
-          </div>
-          <div class="img-buttons">
-            <button class="btn-img" onclick="event.stopPropagation(); pickImage('${p.id}', false)" title="Aus Galerie">🖼 Galerie</button>
-            <button class="btn-img" onclick="event.stopPropagation(); pickImage('${p.id}', true)" title="Kamera">📷 Kamera</button>
-            <button class="btn-img btn-img-del" onclick="event.stopPropagation(); deleteImage('${p.id}')" title="Bild löschen">✕</button>
-          </div>
+        <div class="field">
+          <label>Preis EUR 🇩🇪</label>
+          <input type="number" id="eur_${p.id}" value="${p.eur}" step="0.01" inputmode="decimal" oninput="onPriceChange('${p.id}')">
+        </div>
+      </div>
+      <div class="converted-info">
+        <span class="lbl">CHF-Preis umgerechnet in EUR</span>
+        <span class="val" id="conv_${p.id}">${formatCHF(chfInEur)} EUR</span>
+      </div>
+      <div class="fazit">
+        <div class="fazit-text" id="fazit_${p.id}">
+          <strong>${formatCHF(diff)} EUR</strong><br>günstiger in
+        </div>
+        <div class="fazit-flags">
+          <img class="flag ${chCheaper ? '' : 'dim'}" id="flagCH_${p.id}" src="${chFlagSrc}" alt="CH">
+          <img class="flag ${chCheaper ? 'dim' : ''}" id="flagDE_${p.id}" src="${deFlagSrc}" alt="DE">
+        </div>
+      </div>
+      <div class="img-section">
+        <div class="img-preview" onclick="openLightbox('${p.id}')">
+          <img id="img_${p.id}" src="${imgSrc}" alt="Bild" onerror="this.src='keinfoto.jpg'">
+        </div>
+        <div class="img-controls">
+          <button class="img-btn" onclick="event.stopPropagation(); pickImage('${p.id}', false)">🖼 Galerie</button>
+          <button class="img-btn" onclick="event.stopPropagation(); pickImage('${p.id}', true)">📷 Kamera</button>
+          <button class="img-btn del" onclick="event.stopPropagation(); deleteImage('${p.id}')">✕ Bild löschen</button>
         </div>
       </div>
       <div class="action-row">
         <button class="btn-save" onclick="saveProduct('${p.id}')">✓ Speichern</button>
-        <button class="btn-delete" onclick="askDelete('${p.id}', '${escHtml(p.name)}')">🗑 Löschen</button>
+        <button class="btn-del" onclick="askDelete('${p.id}', '${escHtml(p.name)}')">🗑</button>
       </div>
     </div>
   `;
-
   return card;
 }
+
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -1352,6 +1418,10 @@ function importData(event) {
 // INIT
 // ═══════════════════════════════════════════════════════════════
 initDB(); // async – lädt Cloud-Daten und rendert
+
+// ── MENU ──
+function openMenu()  { document.getElementById('menuOverlay').classList.add('active'); }
+function closeMenu() { document.getElementById('menuOverlay').classList.remove('active'); }
 </script>
 </body>
 </html>

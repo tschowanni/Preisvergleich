@@ -1,0 +1,144 @@
+{
+  "products": [
+    {
+      "id": "mm3moxg5by2zb",
+      "name": "OVO 500gr",
+      "chf": 7.6,
+      "eur": 4.99,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5wzedm",
+      "name": "Barilla Pasta 500gr",
+      "chf": 2.1,
+      "eur": 1.59,
+      "img": null
+    },
+    {
+      "id": "mm3moxg584bek",
+      "name": "Milka Schokolade 100gr",
+      "chf": 1.69,
+      "eur": 0.69,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5movus",
+      "name": "Persil 5L",
+      "chf": 21,
+      "eur": 9.99,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5l877b",
+      "name": "Pouletbrust pro Kg",
+      "chf": 19.5,
+      "eur": 11.99,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5vaxfu",
+      "name": "Ravioli 500gr",
+      "chf": 3.95,
+      "eur": 1.29,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5ubc1o",
+      "name": "Honig 500gr",
+      "chf": 7.95,
+      "eur": 5.49,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5hw2gr",
+      "name": "Uncle Bens Reis 1Kg",
+      "chf": 4.9,
+      "eur": 3.69,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5t1p7i",
+      "name": "Eier 6 gekocht",
+      "chf": 3.6,
+      "eur": 1.27,
+      "img": null
+    },
+    {
+      "id": "mm3moxg534fz6",
+      "name": "Bratfett",
+      "chf": 4.95,
+      "eur": 0.89,
+      "img": null
+    },
+    {
+      "id": "mm3moxg56lxn6",
+      "name": "Barilla Sauce",
+      "chf": 3.5,
+      "eur": 2.99,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5540ie",
+      "name": "Maggi Pulversauce",
+      "chf": 2.35,
+      "eur": 0.89,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5nxons",
+      "name": "Thommy Sauce",
+      "chf": 4.5,
+      "eur": 1.29,
+      "img": null
+    },
+    {
+      "id": "mm3moxg52tvrm",
+      "name": "Calcon XXL-Pack",
+      "chf": 25.3,
+      "eur": 9.74,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5xywg1",
+      "name": "Weichspüler",
+      "chf": 9,
+      "eur": 2.91,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5zk4w6",
+      "name": "Finish Klarspühler",
+      "chf": 9.4,
+      "eur": 1.84,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5xvjkm",
+      "name": "Palmolive",
+      "chf": 4,
+      "eur": 0.99,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5b6jep",
+      "name": "Dusch Das",
+      "chf": 4.5,
+      "eur": 1.79,
+      "img": null
+    },
+    {
+      "id": "mm3moxg58q5l3",
+      "name": "Buttermilch",
+      "chf": 2.2,
+      "eur": 0.69,
+      "img": null
+    },
+    {
+      "id": "mm3moxg5hlacv",
+      "name": "Nippon",
+      "chf": 1,
+      "eur": 1.29,
+      "img": null
+    }
+  ]
+}
